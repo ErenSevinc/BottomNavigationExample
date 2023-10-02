@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "345259707607",
+    "project_id": "bottomnavigationdb",
+    "storage_bucket": "bottomnavigationdb.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:345259707607:android:e4f8b19d35f253ec7ff492",
+        "android_client_info": {
+          "package_name": "com.example.bottomnavigationexample"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBzEz8bI9trTjlU3NY4D-0E6UeAyew5YtQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
