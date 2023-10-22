@@ -9,27 +9,29 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.Red
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.text.isDigitsOnly
 import androidx.navigation.NavController
 
-const val mask = "+90 (###) ### ## ##"
+const val mask = "(###) ### ## ##"
 const val maskChar = '#'
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -59,7 +61,9 @@ fun PhoneField(
     modifier: Modifier = Modifier,
     onPhoneChanged: (String) -> Unit
 ) {
+    val focusColorState = remember { mutableStateOf(Red) }
     OutlinedTextField(
+        colors = TextFieldDefaults.outlinedTextFieldColors(focusedBorderColor = focusColorState.value),
         value = phone,
         onValueChange = { it ->
             if (it.isDigitsOnly()) {
@@ -69,28 +73,18 @@ fun PhoneField(
         label = {
             Text(text = "Phone number")
         },
+
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-        visualTransformation = { numberFilter(it) },
-        modifier = modifier
-            .fillMaxWidth()
-        ,
+        visualTransformation = { numberFilter(it, focusColorState) },
+        modifier = modifier.fillMaxWidth()
     )
 }
 
 
-fun numberFilter(text: AnnotatedString): TransformedText {
+fun numberFilter(text: AnnotatedString, focusColor: MutableState<Color>): TransformedText {
 
-//    val maxLength = mask.count { it == maskChar }
-
-//    val  trimmed = if (text.length > maxLength) text.take(maxLength) else text
     val trimmed = if (text.length >= 10) text.text.substring(0..9) else text.text
-
     val annotatedString = buildAnnotatedString {
-//        if (trimmed.isEmpty()) return@buildAnnotatedString
-
-        if (trimmed.length < 10) {
-            pushStyle(SpanStyle(color = Color.Red))
-        }
 
         var maskIndex = 0
         for (trimIndex in trimmed.indices) {
@@ -102,8 +96,13 @@ fun numberFilter(text: AnnotatedString): TransformedText {
             append(trimmed[trimIndex])
             maskIndex++
         }
-//        pushStyle(SpanStyle(color = Color.LightGray))
-//        append(mask.takeLast(mask.length - this.length))
+
+        if (trimmed.length < 10) {
+            pushStyle(SpanStyle(color = Red))
+            focusColor.value = Red
+        } else {
+            focusColor.value = Color.Green
+        }
     }
 
     val phoneNumberOffsetTranslator = object : OffsetMapping {
@@ -126,51 +125,5 @@ fun numberFilter(text: AnnotatedString): TransformedText {
 
     return TransformedText(annotatedString, phoneNumberOffsetTranslator)
 }
-
-class PhoneVisualTransformation(val mask: String, val maskNumber: Char) : VisualTransformation {
-
-    private val maxLength = mask.count { it == maskNumber }
-
-    override fun filter(text: AnnotatedString): TransformedText {
-        val trimmed = if (text.length > maxLength) text.take(maxLength) else text
-
-        val annotatedString = buildAnnotatedString {
-            if (trimmed.length < maxLength) {
-                pushStyle(SpanStyle(color = Color.Red))
-            }
-
-            var maskIndex = 0
-            for (textIndex in trimmed.indices) {
-                if (mask[maskIndex] != maskNumber) {
-                    val nextDigitIndex = mask.indexOf(maskNumber, maskIndex)
-                    append(mask.substring(maskIndex, nextDigitIndex))
-                    maskIndex = nextDigitIndex
-                }
-                append(trimmed[textIndex])
-                maskIndex++
-            }
-//            pushStyle(SpanStyle(color = Color.Red))
-//            append(mask.takeLast(mask.length - length))
-        }
-
-        return TransformedText(annotatedString, PhoneOffsetMapper(mask, maskNumber))
-    }
-}
-
-private class PhoneOffsetMapper(val mask: String, val numberChar: Char) : OffsetMapping {
-
-    override fun originalToTransformed(offset: Int): Int {
-        var noneDigitCount = 0
-        var i = 0
-        while (i < offset + noneDigitCount) {
-            if (mask[i++] != numberChar) noneDigitCount++
-        }
-        return offset + noneDigitCount
-    }
-
-    override fun transformedToOriginal(offset: Int): Int =
-        offset - mask.take(offset).count { it != numberChar }
-}
-
 
 

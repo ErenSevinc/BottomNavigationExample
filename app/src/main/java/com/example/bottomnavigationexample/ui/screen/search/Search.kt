@@ -20,7 +20,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.currentCompositionLocalContext
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -51,7 +50,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import kotlinx.coroutines.delay
-import kotlin.coroutines.coroutineContext
 
 private val phoneTextList = listOf(
     mutableStateOf(
@@ -142,9 +140,9 @@ fun SearchScreen(navController: NavController) {
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun ContentView(
+fun ContentView() {
 
-) {
+    val isBackspaceState = remember { mutableStateOf(false) }
 
     LaunchedEffect(null) {
         delay(300L)
@@ -178,11 +176,21 @@ fun ContentView(
                 onValueChange = {
                     if (mutableState.value.text != "") {
                         if (it.text != mutableState.value.text) {
-                            mutableState.value = TextFieldValue(text = "", selection = TextRange(0))
-                            mutableState.value = TextFieldValue(
-                                text = (it.text.lastOrNull() ?: "").toString(),
-                                selection = TextRange(it.text.length)
-                            )
+                            if (isBackspaceState.value) {
+                                nextFocus(index +1, requesterList)
+
+                                mutableState.value = TextFieldValue(
+                                    text = (it.text.lastOrNull() ?: "").toString(),
+                                    selection = TextRange(it.text.length)
+                                )
+
+                                isBackspaceState.value = false
+                            } else {
+                                mutableState.value = TextFieldValue(
+                                    text = (it.text.lastOrNull() ?: "").toString(),
+                                    selection = TextRange(it.text.length)
+                                )
+                            }
                         } else {
                             if (it.text == "") {
                                 mutableState.value =
@@ -200,7 +208,8 @@ fun ContentView(
                     }
                 },
                 focusRequester = requesterList[index],
-                index = index
+                index = index,
+                backspaceState = isBackspaceState
             )
         }
     }
@@ -211,6 +220,7 @@ fun ContentView(
 fun InputPhoneView(
     state: MutableState<TextFieldValue>,
     index: Int,
+    backspaceState: MutableState<Boolean>,
     onValueChange: (value: TextFieldValue) -> Unit,
     focusRequester: FocusRequester
 ) {
@@ -237,6 +247,7 @@ fun InputPhoneView(
                     && focusState.value
                 ) {
                     prevFocus(index - 1, requesterList)
+                    backspaceState.value = true
                 }
 
                 false
@@ -247,7 +258,7 @@ fun InputPhoneView(
 
             Box(
                 modifier = Modifier
-                    .width(25.dp)
+                    .width(20.dp)
                     .height(30.dp),
                 contentAlignment = Alignment.Center,
             ) {
@@ -274,7 +285,7 @@ fun InputPhoneView(
                 phoneTextList.forEachIndexed { index, mutableState ->
                     number += mutableState.value.text
                 }
-                Toast.makeText(context,number,Toast.LENGTH_LONG).show()
+                Toast.makeText(context, number, Toast.LENGTH_LONG).show()
                 Log.e("NUMBER", number)
             }
         )
